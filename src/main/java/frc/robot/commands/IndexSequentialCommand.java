@@ -25,7 +25,7 @@ public class IndexSequentialCommand extends SequentialCommandGroup {
         addCommands(
             new InstantCommand(()->{
                 intake.up();
-                shooter.goToIndexPosition();
+                //shooter.goToIndexPosition();
             }, intake, shooter),
             new WaitUntilCommand(()->intake.isUp()),
             new ParallelRaceGroup(
@@ -34,8 +34,9 @@ public class IndexSequentialCommand extends SequentialCommandGroup {
                 new RunCommand(()->intake.intakeToIndex(), intake)
             ),
             new InstantCommand(()->intake.stopSpinMotor(), intake),
-            new RunCommand(()->shooter.runIndexFromIntakeInverted(), shooter).withTimeout(0.2),
-            new InstantCommand(()->shooter.stopIndexer(), shooter)
+            //new RunCommand(()->shooter.runIndexFromIntakeInverted(), shooter).withTimeout(0.2),
+            new InstantCommand(()->shooter.stopIndexer(), shooter),
+            new InstantCommand(()->shooter.goToDownPosition(), shooter)
         );
 
     }

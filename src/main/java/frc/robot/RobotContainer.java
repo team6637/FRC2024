@@ -6,55 +6,55 @@ package frc.robot;
 
 import java.io.File;
 
+import com.fasterxml.jackson.core.sym.Name;
+import com.pathplanner.lib.auto.NamedCommands;
+
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.ConditionalCommand;
-//import edu.wpi.first.wpilibj2.command.ConditionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
-//import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
-//import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import frc.robot.Constants.OperatorConstants;
+import frc.robot.commands.AutonIndexAndShoot;
+import frc.robot.commands.AutonIndexFromIntake;
+import frc.robot.commands.AutonIntake;
+import frc.robot.commands.AutonShoot;
+import frc.robot.commands.AutonShooterPrime;
 import frc.robot.commands.IndexSequentialCommand;
 import frc.robot.commands.swervedrive.drivebase.TeleopDrive;
-import frc.robot.commands.swervedrive.testing.DriveBack2Meters;
-import frc.robot.commands.swervedrive.testing.DriveForward2Meters;
 import frc.robot.subsystems.Intake;
+import frc.robot.subsystems.LimeLight;
 import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.swervedrive.SwerveSubsystem;
 
 public class RobotContainer {
-
-    // public enum State {
-    //     HUNGRY,
-    //     INTAKE_HAS_NOTE,
-    //     INDEXING,
-    //     NOTE_IS_IN_INDEXER,
-    //     SHOOTING
-    // }
-    // public static State robotState = State.HUNGRY;
 
     private final SwerveSubsystem drivebase = new SwerveSubsystem(
         new File(Filesystem.getDeployDirectory(),"swerve")
     );
     
     Joystick joystick = new Joystick(0);
-    public Shooter shooter = new Shooter();
+    public LimeLight limelight = new LimeLight();
+    public Shooter shooter = new Shooter(limelight);
     public Intake intake = new Intake(shooter);
 
 
     SendableChooser<Command> chooser = new SendableChooser<>();
 
     public RobotContainer() {
+        NamedCommands.registerCommand("autonShoot", new AutonShoot(shooter));
+        NamedCommands.registerCommand("autonIntake", new AutonIntake(intake));
+        NamedCommands.registerCommand("autonIndexFromIntake", new AutonIndexFromIntake(shooter, intake));
+        NamedCommands.registerCommand("autonShooterPrime", new AutonShooterPrime(shooter));
+        NamedCommands.registerCommand("autonIndexAndShoot", new AutonIndexAndShoot(shooter, intake));
+
         configureBindings();
 
         TeleopDrive teleopFieldRelativeCommand = new TeleopDrive(
@@ -67,62 +67,112 @@ public class RobotContainer {
 
         drivebase.setDefaultCommand(teleopFieldRelativeCommand);
 
-        chooser.setDefaultOption("Reset Pose", new InstantCommand(()->drivebase.resetOdometry(new Pose2d(new Translation2d(0.0, 0.0), drivebase.getHeading()))));
-        chooser.addOption("Go Forward 2M", new DriveForward2Meters(drivebase));
-        chooser.addOption("Go Backwards 2M", new DriveBack2Meters(drivebase));
+        chooser.setDefaultOption("Front Notes", drivebase.getPathPlannerAuto("front-notes", true));
+        chooser.addOption("Test Index And Shoot", new AutonIndexAndShoot(shooter, intake));
 
         SmartDashboard.putData(chooser);
-
     }
 
     private void configureBindings() {
 
-        // while intake button is held
+        // INTAKE IN
         new JoystickButton(joystick, 3).onTrue(
             // run the intake down and spin wheels
             new SequentialCommandGroup(
+                new InstantCommand(()->shooter.goToIntakePosition(), shooter),
                 new RunCommand(()->intake.down(), intake).until(()->intake.noteIsSeen()),
+                //new RunCommand(()->intake.out(), intake).withTimeout(0.05),
                 new InstantCommand(()->intake.up(), intake)
+
             )
 
-        // when button is let up, lift up intake ONLY if state is still HUNGRY
         ).onFalse(
-          new ConditionalCommand(
+            new ConditionalCommand(
                 new IndexSequentialCommand(intake, shooter),
-                new InstantCommand(()->intake.up(), intake), 
+                new SequentialCommandGroup(
+                    new InstantCommand(()->shooter.goToDownPosition(), shooter),
+                    new InstantCommand(()->intake.up(), intake)
+                ),
                 ()->intake.noteIsSeen()
             )
         );
 
-
-
-
-        // INTAKE
+        // INTAKE OUT
         new JoystickButton(joystick, 4).onTrue(
-            new RunCommand(()->intake.out(),intake)
+           new ParallelCommandGroup(
+                new RunCommand(()->intake.out(), intake),
+                new RunCommand(()->shooter.out(), shooter)
+                )
         ).onFalse(
             new SequentialCommandGroup(
                 new InstantCommand(()->intake.up(), intake),
                 new InstantCommand(()->intake.stopSpinMotor(), intake),    
-                new InstantCommand(()->shooter.stopIndexer(), shooter)
+                new InstantCommand(()->shooter.stopIndexer(), shooter),
+                new InstantCommand(()->shooter.stop(), shooter)
             )
+        );
+
+        new JoystickButton(joystick, 2).onTrue(
+            new RunCommand(()->shooter.indexGo(), shooter)
+        ).onFalse(
+            new InstantCommand(()->shooter.indexStop(), shooter)
         );
         
         // SHOOT
         new JoystickButton(joystick, 1).onTrue(
-            new RunCommand(()->shooter.shoot(),shooter)
+                new RunCommand(()->{
+                    boolean isAtSpeed = shooter.shoot();
+                    if(isAtSpeed) intake.indexForShooter();
+                }, shooter, intake)
         ).onFalse(
             new SequentialCommandGroup(
                 new InstantCommand(()->shooter.stop(), shooter),    
-                new InstantCommand(()->shooter.stopIndexer(), shooter)
+                new InstantCommand(()->shooter.stopIndexer(), shooter),
+                new InstantCommand(()->intake.stopSpinMotor(), intake)
             )
         );
 
-        // INDEX
-        // new JoystickButton(joystick, 8).whileTrue(
-        //     new RunCommand(()->shooter.runIndexFromIntake(),shooter))
-        //     .onFalse(new InstantCommand(()->shooter.stopIndexer()));
+        // go to speaker angle
+        new JoystickButton(joystick, 7).onTrue(
+            new InstantCommand(()->shooter.setLiftPosition(55), shooter)
+        ).onFalse(
+            new InstantCommand(()->shooter.goToDownPosition(), shooter)
+        );
+      
+      
+        // go to sweet spot button 6
+        new JoystickButton(joystick, 6).onTrue(
+            new InstantCommand(()->shooter.setLiftPosition(30), shooter)
+        ).onFalse(
+            new InstantCommand(()->shooter.goToDownPosition(), shooter)
+        );
 
+       //go to apriltag angle 
+        new JoystickButton(joystick, 5).onTrue(
+            new InstantCommand(()->shooter.setLiftPositionFromDistance(), shooter)
+        ).onFalse(
+            new InstantCommand(()->shooter.goToDownPosition(), shooter)
+        );
+
+
+        
+
+
+
+
+
+       // go to amp angle
+        new JoystickButton(joystick, 8).onTrue(
+            new SequentialCommandGroup(
+                new InstantCommand(()->shooter.setLiftPosition(45), shooter),
+                new InstantCommand(()->shooter.setIsTargettingAmp(true), shooter)
+            )
+        ).onFalse(
+            new SequentialCommandGroup(
+                new InstantCommand(()->shooter.goToDownPosition(), shooter),
+                new InstantCommand(()->shooter.setIsTargettingAmp(false), shooter)
+            )
+        );
     }
 
     public Command getAutonomousCommand() {

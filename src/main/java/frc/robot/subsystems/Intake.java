@@ -20,11 +20,11 @@ public class Intake extends SubsystemBase {
     private final CANSparkMax liftMotor = new CANSparkMax (1,MotorType.kBrushless);
     private final CANSparkMax spinMotor = new CANSparkMax (2,MotorType.kBrushless );
     private final DutyCycleEncoder throughboreEncoder = new DutyCycleEncoder(0);
-    public final Rev2mDistanceSensor distanceSensor = new Rev2mDistanceSensor(Port.kOnboard);
+    public final Rev2mDistanceSensor distanceSensor;
     
-    private double upKp = 0.004;
+    private double upKp = 0.005;
     private double downKp = 0.003;
-    private double upPosition = 67.5;
+    private double upPosition = 66;
     private double downPosition = 169.0;
     private double intakePositionTarget = upPosition;
     private final PIDController pid = new PIDController(upKp, 0.0, 0.0);
@@ -39,15 +39,16 @@ public class Intake extends SubsystemBase {
     private final Shooter shooter;
 
     public Intake(Shooter shooter) {
+        distanceSensor = new Rev2mDistanceSensor(Port.kOnboard);
+        distanceSensor.setAutomaticMode(true);
         this.shooter = shooter;
-        SmartDashboard.putNumber("intake kp up", upKp);
-        SmartDashboard.putNumber("intake kp down", downKp);
-        SmartDashboard.putNumber("lift speed up", maxLiftSpeedUp);
         liftMotor.setInverted(false);
         spinMotor.setInverted(true);
-        distanceSensor.setAutomaticMode(true);
     }
     
+    public void indexForShooter() {
+        spinMotor.set(0.55);
+    }
     
     public void stopSpinMotor() {
         spinMotor.set(0.0);
@@ -56,26 +57,27 @@ public class Intake extends SubsystemBase {
     public double getSensorAsDegrees() {
         return throughboreEncoder.getAbsolutePosition() * 360.0;
     }
+
     public double getDistanceSensorValue() {
        return distanceSensor.GetRange();
     }
+
     public boolean noteIsSeen() {
         //return noteSensorInput.get() ? false : true;
-        return getDistanceSensorValue()<=16 ? true : false;
+        return getDistanceSensorValue()<=10  && getDistanceSensorValue() >0 ? true : false;
         
-    }
-
-        
+    }   
 
     public void out() { 
-        //this.intakePositionTarget = downPosition;
         spinMotor.set(-1.0);
+        this.intakePositionTarget = downPosition;
+        this.isGoingDown = true;
     }
 
     public void down() {
         this.intakePositionTarget = downPosition;
         this.isGoingDown = true;
-        spinMotor.set(1.0);
+        spinMotor.set(0.6);
     }
     
     public void up() { 
@@ -85,31 +87,29 @@ public class Intake extends SubsystemBase {
     }
 
     public boolean isUp() {
-        return (getSensorAsDegrees() < upPosition + 10);
+        return (getSensorAsDegrees() < upPosition + 8);
     }
     public void intakeToIndex() {
-        spinMotor.set(0.5);
+        spinMotor.set(0.3);
     }
 
     @Override
     public void periodic() {
-        // SmartDashboard.putNumber("intake distance sensor", getDistanceSensorValue());
-        // double upKp = SmartDashboard.getNumber("intake kp up", this.upKp);
-        // double downKp = SmartDashboard.getNumber("intake kp down", this.downKp);
-        // if(this.isGoingDown) {
-        //     pid.setP(downKp);
-        // } else {
-        //     pid.setP(upKp);
-        // }
+        SmartDashboard.putNumber("intake distance sensor", getDistanceSensorValue());
+        if(this.isGoingDown) {
+            pid.setP(downKp);
+        } else {
+            pid.setP(upKp);
+        }
 
-        //SmartDashboard.putBoolean("note sensor", noteIsSeen());
+        SmartDashboard.putBoolean("note sensor", noteIsSeen());
 
-        // uncomment when shooter lift is finished
-        // maxUpPosition = (shooter.getLiftPosition > xyz) ? upPosition - 20 : upPosition;
+        maxUpPosition = (shooter.getLiftSensorAsDegrees() > 45) ? upPosition + 12 : upPosition;
         
-        if(this.intakePositionTarget > maxUpPosition) this.intakePositionTarget = maxUpPosition;
+        if(this.intakePositionTarget < maxUpPosition) this.intakePositionTarget = maxUpPosition;
+
         double speed = pid.calculate(this.getSensorAsDegrees(), this.intakePositionTarget);
-        double upFromSD = SmartDashboard.getNumber("lift speed up", maxLiftSpeedUp);
+        double upFromSD = SmartDashboard.getNumber("intake lift speed up", maxLiftSpeedUp);
         double maxLiftSpeed = (isGoingDown) ? maxLiftSpeedDown : upFromSD;
         if(Math.abs(speed) > maxLiftSpeed) speed = maxLiftSpeed * Math.signum(speed);
 
@@ -120,8 +120,5 @@ public class Intake extends SubsystemBase {
         liftMotor.set(speed);
 
         SmartDashboard.putNumber("intake sensor", this.getSensorAsDegrees());
-        SmartDashboard.putNumber("intake pid target", this.intakePositionTarget);
-        SmartDashboard.putNumber("intake pid error", this.pid.getPositionError());
-        SmartDashboard.putNumber("intake speed", speed);
     }
 }

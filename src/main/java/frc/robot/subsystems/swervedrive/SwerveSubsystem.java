@@ -5,6 +5,7 @@
 package frc.robot.subsystems.swervedrive;
 
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.commands.PathPlannerAuto;
 import com.pathplanner.lib.path.PathPlannerPath;
 import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
 import com.pathplanner.lib.util.PIDConstants;
@@ -18,7 +19,6 @@ import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.io.File;
@@ -41,7 +41,7 @@ public class SwerveSubsystem extends SubsystemBase
   /**
    * Maximum speed of the robot in meters per second, used to limit acceleration.
    */
-  public double maximumSpeed = Units.feetToMeters(5); //14.5
+  public double maximumSpeed = Units.feetToMeters(14.5); //14.5
 
   /**
    * Initialize {@link SwerveDrive} with the directory provided.
@@ -135,6 +135,17 @@ public class SwerveSubsystem extends SubsystemBase
 
     // Create a path following command using AutoBuilder. This will also trigger event markers.
     return AutoBuilder.followPath(path);
+  }
+
+  public Command getPathPlannerAuto(String autoName, boolean setOdomToStart)
+  {
+    PathPlannerAuto auto = new PathPlannerAuto(autoName);
+    if(setOdomToStart) {
+        //Pose2d startingPose = PathPlannerAuto.getStaringPoseFromAutoFile(autoName);
+
+        resetOdometry(new Pose2d(1.42, 7.01, getHeading()));
+    }
+    return auto;
   }
 
   /**
