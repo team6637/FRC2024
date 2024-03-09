@@ -22,6 +22,7 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.io.File;
+
 import swervelib.SwerveController;
 import swervelib.SwerveDrive;
 import swervelib.math.SwerveMath;
@@ -42,6 +43,8 @@ public class SwerveSubsystem extends SubsystemBase
    * Maximum speed of the robot in meters per second, used to limit acceleration.
    */
   public double maximumSpeed = Units.feetToMeters(14.5); //14.5
+
+  String allianceColor;
 
   /**
    * Initialize {@link SwerveDrive} with the directory provided.
@@ -110,11 +113,22 @@ public class SwerveSubsystem extends SubsystemBase
         // This will flip the path being followed to the red side of the field.
         // THE ORIGIN WILL REMAIN ON THE BLUE SIDE
         var alliance = DriverStation.getAlliance();
+        if(alliance.isPresent() && alliance.get() == DriverStation.Alliance.Red) {
+            allianceColor = "red";
+        } else {
+            allianceColor = "blue";
+        }
+
         return alliance.isPresent() ? alliance.get() == DriverStation.Alliance.Red : false;
       },
       this // Reference to this subsystem to set requirements
     );
   }
+
+    public String getAllianceColor() {
+        return allianceColor;
+    }
+
 
   /**
    * Get the path follower with events.
@@ -141,9 +155,9 @@ public class SwerveSubsystem extends SubsystemBase
   {
     PathPlannerAuto auto = new PathPlannerAuto(autoName);
     if(setOdomToStart) {
-        //Pose2d startingPose = PathPlannerAuto.getStaringPoseFromAutoFile(autoName);
+        Pose2d startingPose = PathPlannerAuto.getStaringPoseFromAutoFile(autoName);
 
-        resetOdometry(new Pose2d(1.42, 7.01, getHeading()));
+        resetOdometry(startingPose);
     }
     return auto;
   }

@@ -6,7 +6,6 @@ package frc.robot;
 
 import java.io.File;
 
-import com.fasterxml.jackson.core.sym.Name;
 import com.pathplanner.lib.auto.NamedCommands;
 
 import edu.wpi.first.math.MathUtil;
@@ -26,9 +25,9 @@ import frc.robot.commands.AutonIndexAndShoot;
 import frc.robot.commands.AutonIndexFromIntake;
 import frc.robot.commands.AutonIntake;
 import frc.robot.commands.AutonShoot;
-import frc.robot.commands.AutonShooterPrime;
 import frc.robot.commands.IndexSequentialCommand;
 import frc.robot.commands.swervedrive.drivebase.TeleopDrive;
+import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.LimeLight;
 import frc.robot.subsystems.Shooter;
@@ -44,15 +43,17 @@ public class RobotContainer {
     public LimeLight limelight = new LimeLight();
     public Shooter shooter = new Shooter(limelight);
     public Intake intake = new Intake(shooter);
+    public Climber climber = new Climber();
 
+    public boolean autoCenter = false;
 
     SendableChooser<Command> chooser = new SendableChooser<>();
 
     public RobotContainer() {
+        NamedCommands.registerCommand("autonShooterGoDown", new InstantCommand(()->shooter.goToDownPosition(), shooter));
         NamedCommands.registerCommand("autonShoot", new AutonShoot(shooter));
         NamedCommands.registerCommand("autonIntake", new AutonIntake(intake));
         NamedCommands.registerCommand("autonIndexFromIntake", new AutonIndexFromIntake(shooter, intake));
-        NamedCommands.registerCommand("autonShooterPrime", new AutonShooterPrime(shooter));
         NamedCommands.registerCommand("autonIndexAndShoot", new AutonIndexAndShoot(shooter, intake));
 
         configureBindings();
@@ -62,14 +63,22 @@ public class RobotContainer {
             () -> -MathUtil.applyDeadband(joystick.getY(), OperatorConstants.Y_DEADBAND),
             () -> -MathUtil.applyDeadband(joystick.getX(), OperatorConstants.Y_DEADBAND),
             () -> -MathUtil.applyDeadband(joystick.getTwist(), OperatorConstants.TWIST_DEADBAND),
-            () -> true
+            () -> true,
+            () -> autoCenter,
+            limelight
         );
 
         drivebase.setDefaultCommand(teleopFieldRelativeCommand);
 
-        chooser.setDefaultOption("Front Notes", drivebase.getPathPlannerAuto("front-notes", true));
-        chooser.addOption("Test Index And Shoot", new AutonIndexAndShoot(shooter, intake));
-
+        chooser.setDefaultOption("Three Front Notes", drivebase.getPathPlannerAuto("three-front-notes", true));
+        chooser.addOption("Front Notes", drivebase.getPathPlannerAuto("front-notes", true));
+        chooser.addOption("One Close One far (left)", drivebase.getPathPlannerAuto("one-close-one-far left", true));
+        chooser.addOption("Pick Up Two far (right)", drivebase.getPathPlannerAuto
+        ("pick-up-two-far right", true));
+        chooser.addOption("Shoot and Cross", drivebase.getPathPlannerAuto
+        ("Shoot and Cross ", true));
+        chooser.addOption("Cross Line", drivebase.getPathPlannerAuto
+        ("Cross Line", true));
         SmartDashboard.putData(chooser);
     }
 
@@ -112,15 +121,17 @@ public class RobotContainer {
             )
         );
 
+        //INDEX
         new JoystickButton(joystick, 2).onTrue(
             new RunCommand(()->shooter.indexGo(), shooter)
         ).onFalse(
-            new InstantCommand(()->shooter.indexStop(), shooter)
+            new InstantCommand(()->shooter.stopIndexer(), shooter)
         );
         
         // SHOOT
         new JoystickButton(joystick, 1).onTrue(
                 new RunCommand(()->{
+                    limelight.setVisionMode("april");
                     boolean isAtSpeed = shooter.shoot();
                     if(isAtSpeed) intake.indexForShooter();
                 }, shooter, intake)
@@ -128,9 +139,27 @@ public class RobotContainer {
             new SequentialCommandGroup(
                 new InstantCommand(()->shooter.stop(), shooter),    
                 new InstantCommand(()->shooter.stopIndexer(), shooter),
-                new InstantCommand(()->intake.stopSpinMotor(), intake)
+                new InstantCommand(()->intake.stopSpinMotor(), intake),
+                new InstantCommand(()->limelight.setVisionMode("off"))
             )
         );
+
+        // Climber Up
+        new JoystickButton(joystick, 13).onTrue(
+            new InstantCommand(()->climber.extend(), climber)
+        ).onFalse(
+            new InstantCommand(()->climber.stop(), climber)
+        );
+        
+        // Climber Down 
+        new JoystickButton(joystick, 12).onTrue(
+            new InstantCommand(()->climber.retract(), climber)
+        ).onFalse(
+            new InstantCommand(()->climber.stop(), climber)
+        );
+
+
+        
 
         // go to speaker angle
         new JoystickButton(joystick, 7).onTrue(
@@ -147,25 +176,30 @@ public class RobotContainer {
             new InstantCommand(()->shooter.goToDownPosition(), shooter)
         );
 
-       //go to apriltag angle 
+
+       // go to apriltag angle 
         new JoystickButton(joystick, 5).onTrue(
-            new InstantCommand(()->shooter.setLiftPositionFromDistance(), shooter)
+            new SequentialCommandGroup(
+                new InstantCommand(()->shooter.setLiftPositionFromDistance(), shooter),
+                new RunCommand(()->{
+                    autoCenter = true;
+                })
+            )
         ).onFalse(
-            new InstantCommand(()->shooter.goToDownPosition(), shooter)
+            new SequentialCommandGroup(
+                new InstantCommand(()->shooter.goToDownPosition(), shooter),
+                new InstantCommand(()->{
+                    autoCenter = false;
+                })
+            )
         );
-
-
-        
-
-
-
 
 
        // go to amp angle
         new JoystickButton(joystick, 8).onTrue(
             new SequentialCommandGroup(
-                new InstantCommand(()->shooter.setLiftPosition(45), shooter),
-                new InstantCommand(()->shooter.setIsTargettingAmp(true), shooter)
+                new InstantCommand(()->shooter.setIsTargettingAmp(true), shooter),
+                new InstantCommand(()->shooter.setLiftPosition(46), shooter)
             )
         ).onFalse(
             new SequentialCommandGroup(

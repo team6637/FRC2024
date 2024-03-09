@@ -22,18 +22,18 @@ public class Intake extends SubsystemBase {
     private final DutyCycleEncoder throughboreEncoder = new DutyCycleEncoder(0);
     public final Rev2mDistanceSensor distanceSensor;
     
-    private double upKp = 0.005;
-    private double downKp = 0.003;
-    private double upPosition = 66;
-    private double downPosition = 169.0;
+    private double upKp = 0.007;
+    private double downKp = 0.006;
+    private double upPosition = 64;
+    private double downPosition = 164.0;
     private double intakePositionTarget = upPosition;
     private final PIDController pid = new PIDController(upKp, 0.0, 0.0);
 
     // create a max up in case the lift is up, this has to get reduced in periodic
     private double maxUpPosition = upPosition;
 
-    private double maxLiftSpeedDown = 0.2;
-    private double maxLiftSpeedUp = 0.5;
+    private double maxLiftSpeedDown = 1.0;
+    private double maxLiftSpeedUp = 1.0;
     private boolean isGoingDown = false;
 
     private final Shooter shooter;
@@ -44,6 +44,7 @@ public class Intake extends SubsystemBase {
         this.shooter = shooter;
         liftMotor.setInverted(false);
         spinMotor.setInverted(true);
+        stopSpinMotor();
     }
     
     public void indexForShooter() {
@@ -113,9 +114,9 @@ public class Intake extends SubsystemBase {
         double maxLiftSpeed = (isGoingDown) ? maxLiftSpeedDown : upFromSD;
         if(Math.abs(speed) > maxLiftSpeed) speed = maxLiftSpeed * Math.signum(speed);
 
-        if(isGoingDown && this.intakePositionTarget > 130.0 && this.intakePositionTarget < 160.0) {
-            speed = -.1;
-        }
+        // if(isGoingDown && this.intakePositionTarget > 125.0 && this.intakePositionTarget < 155.0) {
+        //     speed = -.1;
+        // }
 
         liftMotor.set(speed);
 

@@ -7,6 +7,7 @@ package frc.robot.commands.swervedrive.drivebase;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import frc.robot.subsystems.LimeLight;
 import frc.robot.subsystems.swervedrive.SwerveSubsystem;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
@@ -24,6 +25,9 @@ public class TeleopDrive extends Command
   private final DoubleSupplier   omega;
   private final BooleanSupplier  driveMode;
   private final SwerveController controller;
+  private final BooleanSupplier autoCenter;
+  double autoCenterKp = 0.028;
+  LimeLight limeLight;
 
   /**
    * Creates a new ExampleCommand.
@@ -31,7 +35,7 @@ public class TeleopDrive extends Command
    * @param swerve The subsystem used by this command.
    */
   public TeleopDrive(SwerveSubsystem swerve, DoubleSupplier vX, DoubleSupplier vY, DoubleSupplier omega,
-                     BooleanSupplier driveMode)
+                     BooleanSupplier driveMode, BooleanSupplier autoCenter, LimeLight l)
   {
     this.swerve = swerve;
     this.vX = vX;
@@ -39,24 +43,45 @@ public class TeleopDrive extends Command
     this.omega = omega;
     this.driveMode = driveMode;
     this.controller = swerve.getSwerveController();
+    this.autoCenter = autoCenter;
+    this.limeLight = l;
     // Use addRequirements() here to declare subsystem dependencies.
     addRequirements(swerve);
   }
 
   // Called when the command is initially scheduled.
   @Override
-  public void initialize() {}
+  public void initialize() {
+    SmartDashboard.putNumber("auto center kp", autoCenterKp);
+  }
 
   // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute()
   {
+
+    // delete after tuning
+    double autoCenterKp = SmartDashboard.getNumber("auto center kp", this.autoCenterKp);
+    double angVelocity;
+
+    if(autoCenter.getAsBoolean() && limeLight.isTarget()) {
+        angVelocity = autoCenterKp * limeLight.getTx() * -1;
+    } else {
+        angVelocity = Math.pow(omega.getAsDouble(), 3);
+    }
+
     double xVelocity   = Math.pow(vX.getAsDouble(), 3);
     double yVelocity   = Math.pow(vY.getAsDouble(), 3);
-    double angVelocity = Math.pow(omega.getAsDouble(), 3);
+
+    if(swerve.getAllianceColor() == "red") {
+        xVelocity = xVelocity * -1;
+        yVelocity = yVelocity * -1;
+    }
+    
     SmartDashboard.putNumber("vX", xVelocity);
     SmartDashboard.putNumber("vY", yVelocity);
     SmartDashboard.putNumber("omega", angVelocity);
+
 
     // Drive using raw values.
     swerve.drive(

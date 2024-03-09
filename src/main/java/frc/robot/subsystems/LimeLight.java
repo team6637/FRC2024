@@ -19,6 +19,8 @@ public class LimeLight extends SubsystemBase {
 
         setVisionMode("april");
 		setStream(2);
+        setPipeline(0);
+        setCameraMode(0);
 
     }
 
@@ -68,18 +70,20 @@ public class LimeLight extends SubsystemBase {
 
     public void setVisionMode(String visionMode) {
 		setCameraMode(0);
-		//if (visionMode == "april") { //april
-			setPipeline(0);
-		// } else {
-		// 	setCameraMode(1);
-		// }
+        setPipeline(0);
+
+		if (visionMode == "april") { //april
+            setStream(1);
+		} else {
+            setStream(2);		
+		}
     }
     double height = 57.5 - 10;
     
 
     public double getDistance() {
         if(!isTarget()) return -1;
-        double angle = 23 + getTy();
+        double angle = 21 + getTy();
         double distance = (height/Math.tan(Math.toRadians(angle)));
         return distance;
     }

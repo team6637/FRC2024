@@ -36,10 +36,6 @@ public class AutonIndexFromIntake extends Command {
             if(intake.noteIsSeen()) {
                 intake.intakeToIndex();
                 shooter.runIndexFromIntake();
-            } else {
-                intake.stopSpinMotor();
-                shooter.runIndexFromIntakeInverted();
-                counter++;
             }
         }
     }
@@ -54,6 +50,6 @@ public class AutonIndexFromIntake extends Command {
     // Returns true when the command should end.
     @Override
     public boolean isFinished() {
-        return counter > 20;
+        return !intake.noteIsSeen();
     }
 }

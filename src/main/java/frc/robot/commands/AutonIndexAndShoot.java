@@ -12,6 +12,7 @@ public class AutonIndexAndShoot extends Command {
     Shooter shooter;
     Intake intake;
     int counter;
+    int emergencyCounter;
 
     public AutonIndexAndShoot(Shooter shooter, Intake intake) {
         this.shooter = shooter;
@@ -23,16 +24,17 @@ public class AutonIndexAndShoot extends Command {
     @Override
     public void initialize() {
         counter = 0;
+        emergencyCounter = 0;
+        boolean limelightWorked = shooter.setLiftPositionFromDistance();
+        if(!limelightWorked) shooter.setLiftPosition(42);
 
         intake.up();
         //shooter.goToIntakePosition();
     }
 
-    // Called every time the scheduler runs while the command is scheduled.
     @Override
     public void execute() {
-        boolean limelightWorked = shooter.setLiftPositionFromDistance();
-        if(!limelightWorked) shooter.setLiftPosition(42);
+        shooter.setLiftPositionFromDistance();
 
         boolean shooting = shooter.shoot();
 
@@ -40,6 +42,7 @@ public class AutonIndexAndShoot extends Command {
             intake.intakeToIndex();
             counter++;
         }
+        emergencyCounter++;
     }
 
     // Called once the command ends or is interrupted.
@@ -53,6 +56,6 @@ public class AutonIndexAndShoot extends Command {
     // Returns true when the command should end.
     @Override
     public boolean isFinished() {
-        return counter > 30;
+        return counter > 30 || emergencyCounter > 300;
     }
 }

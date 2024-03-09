@@ -69,6 +69,12 @@
           }
         },
         {
+          "type": "path",
+          "data": {
+            "pathName": "front-notes-step-3-short"
+          }
+        },
+        {
           "type": "named",
           "data": {
             "name": "autonIndexAndShoot"
@@ -79,9 +85,9 @@
           "data": {
             "commands": [
               {
-                "type": "path",
+                "type": "wait",
                 "data": {
-                  "pathName": "front-notes-step-3"
+                  "waitTime": 1.0
                 }
               },
               {
@@ -94,19 +100,13 @@
           }
         },
         {
-          "type": "named",
-          "data": {
-            "name": "autonIndexAndShoot"
-          }
-        },
-        {
           "type": "deadline",
           "data": {
             "commands": [
               {
                 "type": "path",
                 "data": {
-                  "pathName": "front-notes-step-4"
+                  "pathName": "front-notes-step-3b"
                 }
               },
               {

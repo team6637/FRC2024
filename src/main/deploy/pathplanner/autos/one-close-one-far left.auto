@@ -5,42 +5,16 @@
       "x": 1.42,
       "y": 7.01
     },
-    "rotation": 0.0
+    "rotation": 0
   },
   "command": {
     "type": "sequential",
     "data": {
       "commands": [
         {
-          "type": "deadline",
+          "type": "path",
           "data": {
-            "commands": [
-              {
-                "type": "path",
-                "data": {
-                  "pathName": "front-notes-step-1"
-                }
-              },
-              {
-                "type": "sequential",
-                "data": {
-                  "commands": [
-                    {
-                      "type": "wait",
-                      "data": {
-                        "waitTime": 0.5
-                      }
-                    },
-                    {
-                      "type": "named",
-                      "data": {
-                        "name": "autonShooterGoDown"
-                      }
-                    }
-                  ]
-                }
-              }
-            ]
+            "pathName": "ocof-step-1"
           }
         },
         {
@@ -54,9 +28,28 @@
           "data": {
             "commands": [
               {
+                "type": "wait",
+                "data": {
+                  "waitTime": 1.0
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "autonIntake"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "deadline",
+          "data": {
+            "commands": [
+              {
                 "type": "path",
                 "data": {
-                  "pathName": "front-notes-step-2"
+                  "pathName": "ocof-step-2"
                 }
               },
               {
@@ -81,22 +74,10 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "front-notes-step-3"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "autonIntake"
+                  "pathName": "ocof-step-3"
                 }
               }
             ]
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "autonIndexAndShoot"
           }
         },
         {
@@ -106,22 +87,16 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "front-notes-step-4"
+                  "pathName": "ocof-step-4"
                 }
               },
               {
                 "type": "named",
                 "data": {
-                  "name": "autonIntake"
+                  "name": "autonIndexFromIntake"
                 }
               }
             ]
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "autonIndexAndShoot"
           }
         }
       ]

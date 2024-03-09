@@ -3,14 +3,16 @@
   "robotLength": 0.876,
   "holonomicMode": true,
   "pathFolders": [
-    "pick-up-two-far",
+    "cross-line",
     "Testing",
     "front-notes",
-    "one-close-one-far"
+    "one-close-one-far",
+    "pick-up-two-far",
+    "shoot-and-cross"
   ],
   "autoFolders": [],
-  "defaultMaxVel": 4.5,
-  "defaultMaxAccel": 3.0,
+  "defaultMaxVel": 4.0,
+  "defaultMaxAccel": 2.5,
   "defaultMaxAngVel": 540.0,
   "defaultMaxAngAccel": 720.0,
   "maxModuleSpeed": 4.5

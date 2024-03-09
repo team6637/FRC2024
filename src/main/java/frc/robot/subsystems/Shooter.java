@@ -4,10 +4,8 @@
 
 package frc.robot.subsystems;
 
-//import com.ctre.phoenix6.hardware.TalonFX;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkLowLevel.MotorType;
-
 import edu.wpi.first.math.controller.BangBangController;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.DutyCycleEncoder;
@@ -29,31 +27,46 @@ public class Shooter extends SubsystemBase {
     private double kP = 0.015;
     private double minLiftPosition = 20.5;
     private double maxLiftPosition = 56.0;
-    private double liftPositionTarget = 50.0;
+    private double liftPositionTarget = 48.0;
 
     private boolean isGoingDown = false;
     private double maxSpeedUp = 0.2;
     private double maxSpeedDown = 0.05;
 
     private final PIDController liftPid = new PIDController(kP, 0.0, 0.0);
+    private double minRpm = 3000.0;
     private double maxRpm = 5300.0;
-    private double minRpm = 2800.0;
     private double liftDegreeOffset = 84.4;
     private double powerToHoldLiftLevel = 0.08;
 
     private boolean isTargettingAmp = false;
 
+    private double tempAmpRpm = 800;
+    private double tempAmpAngle = 48;
+
     private double [][] liftAngleData = {
-        {50.0, 44.0},
-        {72.0, 35.0},
-        {90.0, 32.0},
-        {130.0, 25.0},
+        {50.0, 50.0},
+        {72.0, 40.0},
+        {90.0, 35.0},
+        {110.0, 32.0},
+        {140.0, 28},
+        {155.0, 25},
+        {175.0, 25},
         {180.0, 21.5}
     };
 
-    private final linearInterpolator liftAngleInterpolator = new linearInterpolator(liftAngleData);
+    private double [][] liftRpmData = {
+        {58, 3400.0},
+        {45, 3600.0},
+        {39, 3800.0},
+        {32, 4200.0},
+        {28, 4700.0},
+        {25, 5300.0},
+        {21.5, 5300.0}
+    };
 
-    //need to change 2000 for later
+    private final linearInterpolator liftAngleInterpolator = new linearInterpolator(liftAngleData);
+    private final linearInterpolator liftRpmInterpolator = new linearInterpolator(liftRpmData);
 
     private LimeLight limeLight;
 
@@ -65,38 +78,43 @@ public class Shooter extends SubsystemBase {
 
         shooterA.setInverted(false);
         shooterB.setInverted(false);
-        lift.setInverted(false);
+        lift.setInverted(true);
         stopIndexer();
+        stop();
+
+        // remove after amp testing
+        // SmartDashboard.putNumber("temp amp rpm", tempAmpRpm);
+        // SmartDashboard.putNumber("temp amp angle", tempAmpAngle);
     }
-    public void stop() {
+
+    public void 
+    stop() {
         shooterA.set(0.0);
         shooterB.set(0.0);
     }
     public void out() {
         shooterA.set(-0.3);
         shooterB.set(-0.3);
-    }
-
-    public void stopLift() {
-        lift.set(0.0);
-    }
-    public void indexGo() {
-        index.set(0.2);
-    }
-    public void indexStop() {
-        index.set(0.0);
+        index.set(-0.2);
     }
 
     public double calculateTargetRpm() {
         double speed;
         if(isTargettingAmp) {
             speed = 1000;
+
+            // remove after amp testing
+           // speed = SmartDashboard.getNumber("temp amp rpm", tempAmpRpm);
+
+    
         } else {
-            double liftRange = maxLiftPosition - minLiftPosition;
-            double positionInRange = liftPositionTarget - minLiftPosition;
-            double percentageUp = positionInRange / liftRange;
-            double rpmRange = maxRpm - minRpm;
-            speed = maxRpm -(rpmRange * percentageUp);
+            // double liftRange = maxLiftPosition - minLiftPosition;
+            // double positionInRange = liftPositionTarget - minLiftPosition;
+            // double percentageUp = positionInRange / liftRange;
+            // double rpmRange = maxRpm - minRpm;
+            // speed = maxRpm -(rpmRange * percentageUp);
+
+            speed = liftRpmInterpolator.getInterpolatedValue(liftPositionTarget);
             SmartDashboard.putNumber("shooter calculated speed", speed);
         }
         return speed;
@@ -106,17 +124,13 @@ public class Shooter extends SubsystemBase {
         isTargettingAmp = v;
     }
 
-    public void prime() {
-        double power = shooterController.calculate(getSpeed(), 3000.00);
-        shooterA.set(power);
-        shooterB.set(power);
-    }
-
     public boolean shoot() {
         double power = shooterController.calculate(getSpeed(), calculateTargetRpm());
         shooterA.set(power);
         shooterB.set(power);
+
         
+
         if (shooterIsAtTargetSpeed() && shooterLiftIsAtTarget()) {
             index.set(0.5);
         } else {
@@ -129,22 +143,18 @@ public class Shooter extends SubsystemBase {
     public boolean shooterIsAtTargetSpeed() {
         return getSpeed() >= calculateTargetRpm() * 0.96;
     }
+
+    public double getSpeed() {
+        return shooterThroughbore.getRate()/29;
+    }
+
+    public void indexGo() {
+        index.set(0.2);
+    }
     
-    public double getLiftSensorAsDegrees() {
-        return (liftThroughbore.getAbsolutePosition() * 360) - liftDegreeOffset;
+    public void indexBack() {
+        index.set(-0.2);
     }
-
-    // todo after shooter lift is in place
-    // move to index position
-    
-    public void setSetpoints(double s){
-        SmartDashboard.putNumber("shooter target speed", s);
-
-    }
-    public void stopIndexer(){
-        index.set(0.0);
-    }
-
 
     public void runIndexFromIntake() {
         index.set(0.3);
@@ -153,8 +163,12 @@ public class Shooter extends SubsystemBase {
         index.set(-0.3);
     }
 
-    public double getSpeed() {
-        return shooterThroughbore.getRate()/29;
+    public void stopIndexer(){
+        index.set(0.0);
+    }
+
+    public double getLiftSensorAsDegrees() {
+        return (liftThroughbore.getAbsolutePosition() * 360) - liftDegreeOffset;
     }
 
     public double liftFeedForward() {
@@ -171,12 +185,14 @@ public class Shooter extends SubsystemBase {
     }
     
     public void setLiftPosition(double newPosition) {
+        // remove after amp testing
+        //if(isTargettingAmp) newPosition = SmartDashboard.getNumber("temp amp angle", tempAmpAngle);
+
 
         // is lift going up or down?
         isGoingDown = newPosition < getLiftSensorAsDegrees() ? true : false;
  
         this.liftPositionTarget = newPosition;
-
     }
 
     public boolean setLiftPositionFromDistance() {
@@ -193,8 +209,6 @@ public class Shooter extends SubsystemBase {
         // return whether or not the limelight saw a target
         return distance > 0;
     }
-
-    
 
     public void moveLift() {
          // set min and max boundaries
@@ -228,22 +242,18 @@ public class Shooter extends SubsystemBase {
     public boolean shooterLiftIsAtTarget() {
         return liftPid.atSetpoint();
     }
-    
 
+    public void stopLift() {
+        lift.set(0.0);
+    }
+    
     @Override
     public void periodic() {
         moveLift();
 
         SmartDashboard.putNumber("shooter speed", getSpeed());
-        SmartDashboard.putNumber("lift Feed Forward", liftFeedForward());
         SmartDashboard.putNumber("lift degrees", getLiftSensorAsDegrees());
         SmartDashboard.putBoolean("lift is at target", liftPid.atSetpoint());
         SmartDashboard.putNumber("lift position target", liftPositionTarget);
-    
-        
-
-       
-        //speed = 0.6;
-        //index.set(speed);
     }
 }
