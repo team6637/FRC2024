@@ -12,9 +12,35 @@
     "data": {
       "commands": [
         {
-          "type": "path",
+          "type": "parallel",
           "data": {
-            "pathName": "putf-step-1"
+            "commands": [
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "putf-step-1"
+                }
+              },
+              {
+                "type": "sequential",
+                "data": {
+                  "commands": [
+                    {
+                      "type": "wait",
+                      "data": {
+                        "waitTime": 0.6
+                      }
+                    },
+                    {
+                      "type": "named",
+                      "data": {
+                        "name": "autonShooterGoDown"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
           }
         },
         {
@@ -36,6 +62,12 @@
           }
         },
         {
+          "type": "named",
+          "data": {
+            "name": "autonIndexAndShoot"
+          }
+        },
+        {
           "type": "path",
           "data": {
             "pathName": "putf-step-4"
@@ -45,6 +77,12 @@
           "type": "path",
           "data": {
             "pathName": "putf-step-5"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "autonIndexAndShoot"
           }
         }
       ]

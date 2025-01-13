@@ -25,13 +25,8 @@ public class Climber extends SubsystemBase {
     
     public Climber() {
         liftLeft.setInverted(true);
-        //liftLeft.setNeutralMode();
-        
         liftRight.setInverted(true);
-
         setSetpoint(minSetpoint);
-
-        SmartDashboard.putNumber("climber kp", kP);
     }
     
     public void extend() {
@@ -90,15 +85,7 @@ public class Climber extends SubsystemBase {
 
     @Override
     public void periodic() {
-        SmartDashboard.putNumber("climber left", liftLeft.getPosition().getValueAsDouble());
-        SmartDashboard.putNumber("climber right", liftRight.getPosition().getValueAsDouble());
         if (usingPID) {
-
-            // delete this group after tuning
-            double kP = SmartDashboard.getNumber("climber kp", this.kP);
-            leftPid.setP(kP);
-            rightPid.setP(kP);
-
             double leftSpeed = leftPid.calculate(liftLeft.getPosition().getValueAsDouble(), setpoint);
             liftLeft.set(leftSpeed);
 

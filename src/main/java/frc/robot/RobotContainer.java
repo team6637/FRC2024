@@ -5,6 +5,8 @@
 package frc.robot;
 
 import java.io.File;
+import java.util.function.BooleanSupplier;
+import java.util.function.DoubleSupplier;
 
 import com.pathplanner.lib.auto.NamedCommands;
 
@@ -20,22 +22,24 @@ import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
+import edu.wpi.first.wpilibj2.command.button.POVButton;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.commands.AutonIndexAndShoot;
 import frc.robot.commands.AutonIndexFromIntake;
 import frc.robot.commands.AutonIntake;
 import frc.robot.commands.AutonShoot;
+import frc.robot.commands.AutonShooterWithoutLimelight;
 import frc.robot.commands.IndexSequentialCommand;
 import frc.robot.commands.swervedrive.drivebase.TeleopDrive;
 import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.LimeLight;
 import frc.robot.subsystems.Shooter;
-import frc.robot.subsystems.swervedrive.SwerveSubsystem;
+import frc.robot.subsystems.SwerveSubsystem;
 
 public class RobotContainer {
 
-    private final SwerveSubsystem drivebase = new SwerveSubsystem(
+    public final SwerveSubsystem drivebase = new SwerveSubsystem(
         new File(Filesystem.getDeployDirectory(),"swerve")
     );
     
@@ -46,6 +50,8 @@ public class RobotContainer {
     public Climber climber = new Climber();
 
     public boolean autoCenter = false;
+    public boolean isTurningToSource = false;
+    public boolean isTurningToSpeaker = false;
 
     SendableChooser<Command> chooser = new SendableChooser<>();
 
@@ -55,9 +61,10 @@ public class RobotContainer {
         NamedCommands.registerCommand("autonIntake", new AutonIntake(intake));
         NamedCommands.registerCommand("autonIndexFromIntake", new AutonIndexFromIntake(shooter, intake));
         NamedCommands.registerCommand("autonIndexAndShoot", new AutonIndexAndShoot(shooter, intake));
+        NamedCommands.registerCommand("autonShooterWithoutLimelight", new AutonShooterWithoutLimelight(shooter));
 
         configureBindings();
-
+        
         TeleopDrive teleopFieldRelativeCommand = new TeleopDrive(
             drivebase,
             () -> -MathUtil.applyDeadband(joystick.getY(), OperatorConstants.Y_DEADBAND),
@@ -65,20 +72,23 @@ public class RobotContainer {
             () -> -MathUtil.applyDeadband(joystick.getTwist(), OperatorConstants.TWIST_DEADBAND),
             () -> true,
             () -> autoCenter,
-            limelight
+            limelight,
+            ()->isTurningToSource,
+            ()->isTurningToSpeaker
         );
 
         drivebase.setDefaultCommand(teleopFieldRelativeCommand);
 
-        chooser.setDefaultOption("Three Front Notes", drivebase.getPathPlannerAuto("three-front-notes", true));
-        chooser.addOption("Front Notes", drivebase.getPathPlannerAuto("front-notes", true));
+        chooser.setDefaultOption("4-note-speaker-everytime", drivebase.getPathPlannerAuto("4-note-speaker-everytime", true));
+        chooser.addOption("3-note-by-amp", drivebase.getPathPlannerAuto("3-note-by-amp", true));
+        chooser.addOption("3-note-by-podium", drivebase.getPathPlannerAuto("3-note-by-podium", true));
+        chooser.addOption("Pick Up Two far (right)", drivebase.getPathPlannerAuto("pick-up-two-far right", true));
+        chooser.addOption("Shoot and Cross", drivebase.getPathPlannerAuto("shoot-and-cross", true));
+        chooser.addOption("Cross Line", drivebase.getPathPlannerAuto("cross-line", true));
+        chooser.addOption("Do Nothing!", new InstantCommand());
+
         chooser.addOption("One Close One far (left)", drivebase.getPathPlannerAuto("one-close-one-far left", true));
-        chooser.addOption("Pick Up Two far (right)", drivebase.getPathPlannerAuto
-        ("pick-up-two-far right", true));
-        chooser.addOption("Shoot and Cross", drivebase.getPathPlannerAuto
-        ("Shoot and Cross ", true));
-        chooser.addOption("Cross Line", drivebase.getPathPlannerAuto
-        ("Cross Line", true));
+        
         SmartDashboard.putData(chooser);
     }
 
@@ -145,14 +155,14 @@ public class RobotContainer {
         );
 
         // Climber Up
-        new JoystickButton(joystick, 13).onTrue(
+        new POVButton(joystick, 0).onTrue(
             new InstantCommand(()->climber.extend(), climber)
         ).onFalse(
             new InstantCommand(()->climber.stop(), climber)
         );
         
         // Climber Down 
-        new JoystickButton(joystick, 12).onTrue(
+        new POVButton(joystick, 180).onTrue(
             new InstantCommand(()->climber.retract(), climber)
         ).onFalse(
             new InstantCommand(()->climber.stop(), climber)
@@ -163,7 +173,7 @@ public class RobotContainer {
 
         // go to speaker angle
         new JoystickButton(joystick, 7).onTrue(
-            new InstantCommand(()->shooter.setLiftPosition(55), shooter)
+            new InstantCommand(()->shooter.setLiftPosition(235), shooter)
         ).onFalse(
             new InstantCommand(()->shooter.goToDownPosition(), shooter)
         );
@@ -171,7 +181,12 @@ public class RobotContainer {
       
         // go to sweet spot button 6
         new JoystickButton(joystick, 6).onTrue(
-            new InstantCommand(()->shooter.setLiftPosition(30), shooter)
+            new SequentialCommandGroup(
+                new InstantCommand(()->shooter.setLiftPosition(216), shooter),
+                new RunCommand(()->{
+                    autoCenter = true;
+                })
+            )
         ).onFalse(
             new InstantCommand(()->shooter.goToDownPosition(), shooter)
         );
@@ -199,15 +214,53 @@ public class RobotContainer {
         new JoystickButton(joystick, 8).onTrue(
             new SequentialCommandGroup(
                 new InstantCommand(()->shooter.setIsTargettingAmp(true), shooter),
-                new InstantCommand(()->shooter.setLiftPosition(46), shooter)
+                new InstantCommand(()->shooter.setLiftPosition(242), shooter)
+            )
+        ).onFalse(
+            new SequentialCommandGroup(
+                new InstantCommand(()->shooter.setIsTargettingAmp(false), shooter),
+                new InstantCommand(()->shooter.goToDownPosition(), shooter)
+            )
+        );
+                
+        // Intake from Source
+        new JoystickButton(joystick, 10).onTrue(
+            new SequentialCommandGroup(
+                new InstantCommand(()->shooter.setLiftPosition(227), shooter),
+                new RunCommand(()->shooter.out(), shooter)
             )
         ).onFalse(
             new SequentialCommandGroup(
                 new InstantCommand(()->shooter.goToDownPosition(), shooter),
-                new InstantCommand(()->shooter.setIsTargettingAmp(false), shooter)
+                new InstantCommand(()->shooter.stop(), shooter),    
+                new InstantCommand(()->shooter.stopIndexer(), shooter)
             )
         );
-    }
+
+        // rotate to source
+        new JoystickButton(joystick, 16).onTrue(
+            new InstantCommand(()->{
+                isTurningToSource = true;
+                isTurningToSpeaker = false;
+            })
+        ).onFalse(
+            new InstantCommand(()->{
+                isTurningToSource = false;
+            })
+        );
+
+        // rotate to speaker
+        new JoystickButton(joystick, 15).onTrue(
+            new InstantCommand(()->{
+                isTurningToSpeaker = true;
+                isTurningToSource = false;
+            })
+        ).onFalse(
+            new InstantCommand(()->{
+                isTurningToSpeaker = false;
+            })
+        );
+     }
 
     public Command getAutonomousCommand() {
         return chooser.getSelected();

@@ -30,7 +30,7 @@ public class Intake extends SubsystemBase {
     private final PIDController pid = new PIDController(upKp, 0.0, 0.0);
 
     // create a max up in case the lift is up, this has to get reduced in periodic
-    private double maxUpPosition = upPosition;
+    //private double maxUpPosition = upPosition;
 
     private double maxLiftSpeedDown = 1.0;
     private double maxLiftSpeedUp = 1.0;
@@ -64,9 +64,7 @@ public class Intake extends SubsystemBase {
     }
 
     public boolean noteIsSeen() {
-        //return noteSensorInput.get() ? false : true;
-        return getDistanceSensorValue()<=10  && getDistanceSensorValue() >0 ? true : false;
-        
+        return getDistanceSensorValue()<=10  && getDistanceSensorValue() >0 ? true : false;        
     }   
 
     public void out() { 
@@ -96,30 +94,26 @@ public class Intake extends SubsystemBase {
 
     @Override
     public void periodic() {
-        SmartDashboard.putNumber("intake distance sensor", getDistanceSensorValue());
         if(this.isGoingDown) {
             pid.setP(downKp);
         } else {
             pid.setP(upKp);
         }
 
-        SmartDashboard.putBoolean("note sensor", noteIsSeen());
-
-        maxUpPosition = (shooter.getLiftSensorAsDegrees() > 45) ? upPosition + 12 : upPosition;
+        //maxUpPosition = (shooter.getLiftSensorAsDegrees() > 45) ? upPosition + 12 : upPosition;
         
-        if(this.intakePositionTarget < maxUpPosition) this.intakePositionTarget = maxUpPosition;
+        //if(this.intakePositionTarget < maxUpPosition) this.intakePositionTarget = maxUpPosition;
 
         double speed = pid.calculate(this.getSensorAsDegrees(), this.intakePositionTarget);
-        double upFromSD = SmartDashboard.getNumber("intake lift speed up", maxLiftSpeedUp);
-        double maxLiftSpeed = (isGoingDown) ? maxLiftSpeedDown : upFromSD;
+        double maxLiftSpeed = (isGoingDown) ? maxLiftSpeedDown : maxLiftSpeedUp;
         if(Math.abs(speed) > maxLiftSpeed) speed = maxLiftSpeed * Math.signum(speed);
-
-        // if(isGoingDown && this.intakePositionTarget > 125.0 && this.intakePositionTarget < 155.0) {
-        //     speed = -.1;
-        // }
 
         liftMotor.set(speed);
 
+        SmartDashboard.putNumber("intake distance sensor", getDistanceSensorValue());
+        SmartDashboard.putBoolean("note sensor", noteIsSeen());
         SmartDashboard.putNumber("intake sensor", this.getSensorAsDegrees());
+        SmartDashboard.putBoolean("intake is up", isUp());
+        SmartDashboard.putNumber("intake target position", intakePositionTarget);
     }
 }

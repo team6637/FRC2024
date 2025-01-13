@@ -22,6 +22,12 @@
           "data": {
             "name": "autonShoot"
           }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "sac-step-2"
+          }
         }
       ]
     }

@@ -26,7 +26,7 @@ public class AutonIndexAndShoot extends Command {
         counter = 0;
         emergencyCounter = 0;
         boolean limelightWorked = shooter.setLiftPositionFromDistance();
-        if(!limelightWorked) shooter.setLiftPosition(42);
+        if(!limelightWorked) shooter.setLiftPosition(235);
 
         intake.up();
         //shooter.goToIntakePosition();
@@ -36,9 +36,9 @@ public class AutonIndexAndShoot extends Command {
     public void execute() {
         shooter.setLiftPositionFromDistance();
 
-        boolean shooting = shooter.shoot();
+        boolean isAtSpeed = shooter.shoot();
 
-        if(intake.isUp() && shooting) {
+        if(intake.isUp() && isAtSpeed) {
             intake.intakeToIndex();
             counter++;
         }
@@ -56,6 +56,6 @@ public class AutonIndexAndShoot extends Command {
     // Returns true when the command should end.
     @Override
     public boolean isFinished() {
-        return counter > 30 || emergencyCounter > 300;
+        return counter > 40 || emergencyCounter > 200;
     }
 }

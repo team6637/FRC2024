@@ -2,45 +2,19 @@
   "version": 1.0,
   "startingPose": {
     "position": {
-      "x": 1.42,
-      "y": 7.01
+      "x": 1.3725738150477713,
+      "y": 5.562647359246215
     },
-    "rotation": 0.0
+    "rotation": 0
   },
   "command": {
     "type": "sequential",
     "data": {
       "commands": [
         {
-          "type": "deadline",
+          "type": "wait",
           "data": {
-            "commands": [
-              {
-                "type": "path",
-                "data": {
-                  "pathName": "front-notes-step-1"
-                }
-              },
-              {
-                "type": "sequential",
-                "data": {
-                  "commands": [
-                    {
-                      "type": "wait",
-                      "data": {
-                        "waitTime": 0.5
-                      }
-                    },
-                    {
-                      "type": "named",
-                      "data": {
-                        "name": "autonShooterGoDown"
-                      }
-                    }
-                  ]
-                }
-              }
-            ]
+            "waitTime": 0.6
           }
         },
         {
@@ -56,13 +30,32 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "front-notes-step-2"
+                  "pathName": "speaker-4-note-step-3"
                 }
               },
               {
                 "type": "named",
                 "data": {
                   "name": "autonIntake"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "deadline",
+          "data": {
+            "commands": [
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "speaker-4-note-step-4"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "autonIndexFromIntake"
                 }
               }
             ]
@@ -81,13 +74,32 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "front-notes-step-3"
+                  "pathName": "speaker-4-note-step-5"
                 }
               },
               {
                 "type": "named",
                 "data": {
                   "name": "autonIntake"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "deadline",
+          "data": {
+            "commands": [
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "speaker-4-note-step-6"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "autonIndexFromIntake"
                 }
               }
             ]
@@ -106,13 +118,32 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "front-notes-step-4"
+                  "pathName": "speaker-4-note-step-1"
                 }
               },
               {
                 "type": "named",
                 "data": {
                   "name": "autonIntake"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "deadline",
+          "data": {
+            "commands": [
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "speaker-4-note-step-2"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "autonIndexFromIntake"
                 }
               }
             ]

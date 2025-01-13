@@ -4,9 +4,7 @@
 
 package frc.robot.commands;
 
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Shooter;
 
 public class AutonShoot extends Command {
@@ -29,10 +27,10 @@ public class AutonShoot extends Command {
     @Override
     public void execute() {
         boolean limelightWorked = shooter.setLiftPositionFromDistance();
-        if(!limelightWorked) shooter.setLiftPosition(42);
+        if(!limelightWorked) shooter.setLiftPosition(235);
 
-        boolean shooting = shooter.shoot();
-        if(shooting) {
+        boolean isAtSpeed = shooter.shoot();
+        if(isAtSpeed) {
             counter++;
         }
     }

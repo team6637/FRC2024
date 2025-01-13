@@ -8,20 +8,20 @@
       },
       "prevControl": null,
       "nextControl": {
-        "x": 6.596556940146291,
-        "y": 1.214069465822663
+        "x": 4.710162230595501,
+        "y": 0.5152768080143852
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 2.43,
-        "y": 3.5
+        "x": 1.91,
+        "y": 4.12
       },
       "prevControl": {
-        "x": 2.882879194153,
-        "y": 2.7429942042600963
+        "x": 2.362879194153,
+        "y": 3.3629942042600964
       },
       "nextControl": null,
       "isLocked": false,
@@ -33,7 +33,7 @@
   "eventMarkers": [
     {
       "name": "shoot",
-      "waypointRelativePos": 0.75,
+      "waypointRelativePos": 0.05,
       "command": {
         "type": "sequential",
         "data": {
@@ -41,7 +41,7 @@
             {
               "type": "named",
               "data": {
-                "name": "autonIndexAndShoot"
+                "name": "autonIndexFromIntake"
               }
             }
           ]
@@ -51,19 +51,19 @@
   ],
   "globalConstraints": {
     "maxVelocity": 4.5,
-    "maxAcceleration": 4.5,
+    "maxAcceleration": 6.0,
     "maxAngularVelocity": 540.0,
     "maxAngularAcceleration": 720.0
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": -42.51999999999998,
-    "rotateFast": true
+    "rotation": -33.0,
+    "rotateFast": false
   },
   "reversed": false,
   "folder": "pick-up-two-far",
   "previewStartingState": {
-    "rotation": 0,
+    "rotation": 30.17309703837583,
     "velocity": 0
   },
   "useDefaultConstraints": false

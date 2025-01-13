@@ -40,7 +40,9 @@ public class Robot extends TimedRobot {
       m_autonomousCommand.schedule();
     }
 
-    m_robotContainer.shooter.setLiftPosition(48.0);
+    m_robotContainer.shooter.setLiftPosition(238);
+    m_robotContainer.drivebase.setMotorBrake(true);
+
 
   }
 
@@ -56,7 +58,8 @@ public class Robot extends TimedRobot {
       m_autonomousCommand.cancel();
     }
 
-    m_robotContainer.shooter.setLiftPosition(48.0);
+    m_robotContainer.shooter.setLiftPosition(235);
+    m_robotContainer.drivebase.setMotorBrake(true);
 
   }
 

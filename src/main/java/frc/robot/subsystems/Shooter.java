@@ -25,24 +25,19 @@ public class Shooter extends SubsystemBase {
     private final BangBangController shooterController = new BangBangController();
    
     private double kP = 0.015;
-    private double minLiftPosition = 20.5;
-    private double maxLiftPosition = 56.0;
-    private double liftPositionTarget = 48.0;
+    private double minLiftPosition = 200.5;
+    private double maxLiftPosition = 237.0;
+    private double liftPositionTarget = 228.0;
 
     private boolean isGoingDown = false;
     private double maxSpeedUp = 0.2;
     private double maxSpeedDown = 0.05;
 
     private final PIDController liftPid = new PIDController(kP, 0.0, 0.0);
-    private double minRpm = 3000.0;
-    private double maxRpm = 5300.0;
     private double liftDegreeOffset = 84.4;
     private double powerToHoldLiftLevel = 0.08;
 
     private boolean isTargettingAmp = false;
-
-    private double tempAmpRpm = 800;
-    private double tempAmpAngle = 48;
 
     private double [][] liftAngleData = {
         {50.0, 50.0},
@@ -72,7 +67,6 @@ public class Shooter extends SubsystemBase {
 
     public Shooter(LimeLight limelight) {
         this.limeLight = limelight;
-        SmartDashboard.putNumber("lift kP", kP);
         liftPid.setTolerance(5, 8);
 
 
@@ -81,10 +75,6 @@ public class Shooter extends SubsystemBase {
         lift.setInverted(true);
         stopIndexer();
         stop();
-
-        // remove after amp testing
-        // SmartDashboard.putNumber("temp amp rpm", tempAmpRpm);
-        // SmartDashboard.putNumber("temp amp angle", tempAmpAngle);
     }
 
     public void 
@@ -101,19 +91,9 @@ public class Shooter extends SubsystemBase {
     public double calculateTargetRpm() {
         double speed;
         if(isTargettingAmp) {
-            speed = 1000;
+            speed = 20;
 
-            // remove after amp testing
-           // speed = SmartDashboard.getNumber("temp amp rpm", tempAmpRpm);
-
-    
         } else {
-            // double liftRange = maxLiftPosition - minLiftPosition;
-            // double positionInRange = liftPositionTarget - minLiftPosition;
-            // double percentageUp = positionInRange / liftRange;
-            // double rpmRange = maxRpm - minRpm;
-            // speed = maxRpm -(rpmRange * percentageUp);
-
             speed = liftRpmInterpolator.getInterpolatedValue(liftPositionTarget);
             SmartDashboard.putNumber("shooter calculated speed", speed);
         }
@@ -125,11 +105,12 @@ public class Shooter extends SubsystemBase {
     }
 
     public boolean shoot() {
-        double power = shooterController.calculate(getSpeed(), calculateTargetRpm());
-        shooterA.set(power);
-        shooterB.set(power);
+        //double power = shooterController.calculate(getSpeed(), calculateTargetRpm());
+        //shooterA.set(power);
+        //shooterB.set(power);
 
-        
+        shooterA.setVoltage(10.0);
+        shooterB.setVoltage(10.0);
 
         if (shooterIsAtTargetSpeed() && shooterLiftIsAtTarget()) {
             index.set(0.5);
@@ -181,14 +162,10 @@ public class Shooter extends SubsystemBase {
     }
 
     public void goToIntakePosition() {
-        setLiftPosition(30);
+        setLiftPosition(210);
     }
     
     public void setLiftPosition(double newPosition) {
-        // remove after amp testing
-        //if(isTargettingAmp) newPosition = SmartDashboard.getNumber("temp amp angle", tempAmpAngle);
-
-
         // is lift going up or down?
         isGoingDown = newPosition < getLiftSensorAsDegrees() ? true : false;
  
@@ -224,9 +201,7 @@ public class Shooter extends SubsystemBase {
         } else if(isGoingDown && getLiftSensorAsDegrees() > 25 && liftPositionTarget < 25) {
             lift.set(0.005);
         } else {
-        // calculate power
-            double kP = SmartDashboard.getNumber("lift kP", this.kP);
-            liftPid.setP(kP);
+            // calculate power
             double power = liftPid.calculate(this.getLiftSensorAsDegrees(), this.liftPositionTarget) + liftFeedForward();
 
             double powerLimit = isGoingDown? maxSpeedDown : maxSpeedUp;
@@ -234,7 +209,6 @@ public class Shooter extends SubsystemBase {
             power = power > Math.abs(powerLimit) ? powerLimit * Math.signum(power) : power;
             
             // set max power for moving lift
-            SmartDashboard.putNumber("lift power", power);
             lift.set(power);
         }
     }
